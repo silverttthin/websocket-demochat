@@ -1,0 +1,18 @@
+version: '3'
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+    environment:
+      # MongoDB 연결 문자열에서 호스트명을 'mongo'로 설정 (docker-compose의 서비스 이름)
+      - MONGO_URL=mongodb://root:1234@mongo:27017/chat?authSource=admin
+  mongo:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: 1234

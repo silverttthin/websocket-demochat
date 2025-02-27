@@ -1,0 +1,99 @@
+<!-- public/index.html -->
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>웹소켓 채팅방</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        #chat {
+            border: 1px solid #ccc;
+            height: 300px;
+            overflow-y: scroll;
+            padding: 10px;
+        }
+
+        #messageForm {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>웹소켓 채팅방</h1>
+    <!-- 간단한 유저 식별: 이름과 방 입력 -->
+    <div id="login">
+        <input id="username" type="text" placeholder="이름" />
+        <input id="room" type="text" placeholder="채팅방 이름" />
+        <button id="joinBtn">입장</button>
+    </div>
+    <div id="chatContainer" style="display: none;">
+        <div id="chat"></div>
+        <form id="messageForm">
+            <input id="messageInput" type="text" placeholder="메시지 입력..." autocomplete="off" />
+            <button type="submit">전송</button>
+        </form>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        const loginDiv = document.getElementById('login');
+        const chatContainer = document.getElementById('chatContainer');
+        const joinBtn = document.getElementById('joinBtn');
+        const usernameInput = document.getElementById('username');
+        const roomInput = document.getElementById('room');
+        const chatDiv = document.getElementById('chat');
+        const messageForm = document.getElementById('messageForm');
+        const messageInput = document.getElementById('messageInput');
+
+        // 로그인 후 채팅방 입장
+        joinBtn.addEventListener('click', () => {
+            const username = usernameInput.value.trim();
+            const room = roomInput.value.trim();
+            if (!username || !room) return alert('이름과 채팅방을 입력하세요.');
+
+            // 서버에 방 입장 요청
+            socket.emit('joinRoom', { username, room });
+
+            loginDiv.style.display = 'none';
+            chatContainer.style.display = 'block';
+        });
+
+        // 이전 메시지 로드
+        socket.on('previousMessages', (messages) => {
+            messages.forEach(addMessage);
+        });
+
+        // 새 메시지 수신
+        socket.on('message', (msg) => {
+            addMessage(msg);
+        });
+
+        // 메시지 전송
+        messageForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const msg = messageInput.value.trim();
+            if (msg) {
+                socket.emit('chatMessage', msg);
+                messageInput.value = '';
+            }
+        });
+
+        // 채팅 메시지 추가 함수
+        function addMessage({ username, message, createdAt }) {
+            const time = new Date(createdAt).toLocaleTimeString();
+            const msgElem = document.createElement('div');
+            msgElem.textContent = `[${time}] ${username}: ${message}`;
+            chatDiv.appendChild(msgElem);
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+    </script>
+</body>
+
+</html>
